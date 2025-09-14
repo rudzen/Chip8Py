@@ -29,23 +29,61 @@ def load_rom(file_path: str) -> List[int]:
 def main():
     """Main entry point for CHIP-8 emulator"""
     # Check command line arguments
-    if len(sys.argv) != 2:
-        print("Usage: python main.py <rom_file>")
+    test_mode = False
+    rom_path = None
+
+    if len(sys.argv) < 2:
+        print("Usage: python main.py [-test] <rom_file>")
         sys.exit(1)
 
-    rom_path = sys.argv[1]
+    # Parse command line arguments
+    args = sys.argv[1:]
+    if "-test" in args:
+        test_mode = True
+        args.remove("-test")
+
+    if len(args) != 1:
+        print("Usage: python main.py [-test] <rom_file>")
+        sys.exit(1)
+
+    rom_path = args[0]
 
     # Load ROM
     print(f"Loading ROM: {rom_path}")
     rom_data = load_rom(rom_path)
     if not rom_data:
         print("Failed to load ROM file")
+        if test_mode:
+            print(f"Test mode - Final StateError: {StateError.FILE_LOAD}")
         sys.exit(1)
 
     print(f"ROM loaded successfully, size: {len(rom_data)} bytes")
 
     # Initialize SDL
     sdl_context = SdlContext()
+
+    # Check for test mode - exit after initialization
+    if test_mode:
+        print(f"Test mode - SDL initialization complete")
+        print(f"Final StateError: {sdl_context.error_state}")
+        if sdl_context.error_state == StateError.NONE:
+            print("✅ All systems initialized successfully!")
+        else:
+            print("❌ Initialization failed with errors:")
+            if sdl_context.error_state & StateError.SDL_INIT:
+                print("  - SDL initialization failed")
+            if sdl_context.error_state & StateError.WINDOW_CREATE:
+                print("  - Window creation failed")
+            if sdl_context.error_state & StateError.RENDERER_CREATE:
+                print("  - Renderer creation failed")
+            if sdl_context.error_state & StateError.AUDIO_INIT:
+                print("  - Audio initialization failed")
+
+        # Clean up and exit
+        sdl_context.cleanup()
+        sys.exit(0 if sdl_context.error_state == StateError.NONE else 1)
+
+    # Normal operation continues here
     if sdl_context.error_state != StateError.NONE:
         print(f"SDL initialization failed with error: {sdl_context.error_state}")
         sys.exit(1)
@@ -105,6 +143,12 @@ def main():
                 except Exception as e:
                     print(f"CPU step error: {e}")
                     # Continue execution for now, could add error handling here
+
+            # Handle audio based on sound timer
+            if chip8.sound_timer > 0:
+                sdl_context.start_beep()
+            else:
+                sdl_context.stop_beep()
 
             # Render at 60Hz
             if current_time - last_time >= frame_time:
