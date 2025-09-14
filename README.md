@@ -80,10 +80,43 @@ Run the emulator with a ROM file:
 python main.py <rom_file>
 ```
 
+### Test Mode
+
+Test system initialization without running the emulator:
+
+```bash
+python main.py -test <rom_file>
+```
+
+The `-test` parameter will:
+- Load the specified ROM file
+- Initialize all SDL systems (video, audio, window, renderer)
+- Display detailed initialization status
+- Exit immediately with success/failure report
+- Clean up all resources properly
+
+**Example test output:**
+```
+Loading ROM: .\roms\sample.ch8
+ROM loaded successfully, size: 26 bytes
+Audio initialized: 44100Hz, 1 channel(s)
+Test mode - SDL initialization complete
+Final StateError: StateError.NONE
+✅ All systems initialized successfully!
+```
+
+If initialization fails, you'll see detailed error information:
+```
+❌ Initialization failed with errors:
+  - SDL initialization failed
+  - Audio initialization failed
+```
+
 ### Example
 
 ```bash
-python main.py roms/sample.ch8
+python main.py roms/sample.ch8              # Run emulator
+python main.py -test roms/sample.ch8        # Test initialization only
 ```
 
 ### Controls
